@@ -1,0 +1,100 @@
+<div class="form-container">
+  <div class="header">
+    <div class="header-left">
+      <app-logo size="medium" [showText]="true"></app-logo>
+      <h2>Apply for Leave</h2>
+    </div>
+    <span class="user-name">{{ userName }}</span>
+  </div>
+
+  <div class="two-column-layout">
+    <!-- Left Column: Leave Form -->
+    <div class="form-column">
+      <form (ngSubmit)="onSubmit()" #leaveForm="ngForm">
+        <div class="form-group">
+          <label>Leave Type:</label>
+          <select class="form-control" [(ngModel)]="leaveData.leaveTypeID" name="leaveTypeID" required>
+            <option value="">Select Leave Type</option>
+            <option value="1">Annual Leave</option>
+            <option value="2">Sick Leave</option>
+            <option value="3">Family Leave</option>
+            <option value="4">Unpaid Leave</option>
+            <option value="5">Maternity Leave</option>
+            <option value="6">Paternity Leave</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label>Start Date:</label>
+          <input type="date" class="form-control" [(ngModel)]="leaveData.startDate" name="startDate" required>
+        </div>
+
+        <div class="form-group">
+          <label>End Date:</label>
+          <input type="date" class="form-control" [(ngModel)]="leaveData.endDate" name="endDate" required>
+        </div>
+
+        <!-- Date Summary (shows duration when both dates are selected) -->
+        <div class="date-summary" *ngIf="leaveData.startDate && leaveData.endDate">
+          <h4>📅 Leave Summary</h4>
+          <div class="summary-item">
+            <span>Duration:</span>
+            <strong>{{ calculateDuration() }} day(s)</strong>
+          </div>
+          <div class="summary-item">
+            <span>Leave Type:</span>
+            <strong>{{ getSelectedLeaveType() }}</strong>
+          </div>
+          <div class="summary-item">
+            <span>Dates:</span>
+            <strong>{{ leaveData.startDate | date:'MMM d, y' }} - {{ leaveData.endDate | date:'MMM d, y' }}</strong>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label>Reason:</label>
+          <textarea class="form-control" rows="3" [(ngModel)]="leaveData.reason" name="reason" required placeholder="Please provide a reason for your leave request..."></textarea>
+        </div>
+
+        <!-- Supporting Document Upload -->
+        <div class="form-group">
+          <label>Supporting Document (Optional)</label>
+          <input 
+            type="file" 
+            class="form-control" 
+            (change)="onFileSelected($event)" 
+            accept=".pdf,.jpg,.jpeg,.png,.doc,.docx"
+          >
+          <small class="text-muted">
+            Upload medical certificate, doctor's note, etc. (Max 5MB)
+            <span *ngIf="selectedFile" class="file-name">Selected: {{ selectedFile.name }}</span>
+          </small>
+        </div>
+
+        <div class="button-group">
+          <button type="submit" class="btn btn-primary" [disabled]="!leaveForm.form.valid || isLoading">
+            {{ isLoading ? 'Submitting...' : 'Submit Request' }}
+          </button>
+          <button type="button" class="btn btn-secondary" (click)="cancel()">Cancel</button>
+        </div>
+      </form>
+    </div>
+
+    <!-- Right Column: Calendar -->
+    <div class="calendar-column">
+      <app-calendar (dateSelected)="onCalendarDateSelected($event)"></app-calendar>
+      
+      <!-- Quick Tips -->
+      <div class="tips-card glass">
+        <h4>💡 Quick Tips</h4>
+        <ul>
+          <li>Click any date on the calendar to select it</li>
+          <li>First click sets START date</li>
+          <li>Second click sets END date</li>
+          <li>Click again to replace dates</li>
+          <li>Upload supporting documents if required</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</div>

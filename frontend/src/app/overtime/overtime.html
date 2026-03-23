@@ -1,0 +1,96 @@
+<div class="overtime-container">
+  <div class="bg-orb"></div>
+  <div class="bg-orb-2"></div>
+  <div class="grid-pattern"></div>
+
+  <div class="header glass">
+    <div class="header-left">
+      <app-logo size="medium" [showText]="true"></app-logo>
+      <h1>Overtime Opportunities</h1>
+    </div>
+    <button class="btn-back" (click)="goBack()">← Back to Dashboard</button>
+  </div>
+
+  <div class="overtime-content">
+    <!-- Available Overtime Section -->
+    <div class="section glass">
+      <h2>🕐 Available Overtime</h2>
+      
+      <div *ngIf="loading" class="loading-state">
+        <div class="spinner"></div>
+        <p>Loading opportunities...</p>
+      </div>
+
+      <div class="overtime-grid" *ngIf="!loading">
+        <div class="overtime-card" *ngFor="let item of overtimeList">
+          <div class="card-header">
+            <h3>{{ item.title }}</h3>
+            <span class="slots-badge">{{ item.currentSlots }}/{{ item.maxSlots }} slots</span>
+          </div>
+          <p class="description">{{ item.description }}</p>
+          <div class="details">
+            <span class="date">📅 {{ item.date | date:'fullDate' }}</span>
+            <span class="time">⏰ {{ item.startTime }} - {{ item.endTime }}</span>
+            <span class="manager">👔 {{ item.managerName }} ({{ item.managerDepartment }})</span>
+          </div>
+          <button class="btn-apply" (click)="applyForOvertime(item)" [disabled]="item.currentSlots >= item.maxSlots">
+            {{ item.currentSlots >= item.maxSlots ? 'Fully Booked' : 'Apply Now' }}
+          </button>
+        </div>
+
+        <div *ngIf="overtimeList.length === 0" class="empty-state">
+          <div class="empty-icon">✅</div>
+          <h3>No Overtime Available</h3>
+          <p>Check back later for overtime opportunities in your department</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- My Applications Section -->
+    <div class="section glass">
+      <h2>📋 My Applications</h2>
+      
+      <div class="applications-list" *ngIf="myApplications.length > 0">
+        <div class="application-card" *ngFor="let app of myApplications">
+          <div class="application-header">
+            <h4>{{ app.overtime.title }}</h4>
+            <span class="status-badge" [class]="getStatusClass(app.status)">{{ app.status }}</span>
+          </div>
+          <p>{{ app.overtime.description }}</p>
+          <div class="application-details">
+            <span>{{ app.overtime.date | date:'MMM d, y' }}</span>
+            <span>{{ app.overtime.startTime }} - {{ app.overtime.endTime }}</span>
+            <span>Applied: {{ app.appliedAt | date:'MMM d, h:mm a' }}</span>
+          </div>
+          <div class="reason" *ngIf="app.reason">
+            <strong>Reason:</strong> {{ app.reason }}
+          </div>
+        </div>
+      </div>
+      
+      <div *ngIf="myApplications.length === 0" class="empty-state small">
+        <div class="empty-icon">📭</div>
+        <p>You haven't applied for any overtime yet</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Apply Modal -->
+  <div class="modal" *ngIf="showApplyModal" (click)="closeModal()">
+    <div class="modal-content glass" (click)="$event.stopPropagation()">
+      <h3>Apply for Overtime</h3>
+      <p><strong>{{ selectedOvertime?.title }}</strong></p>
+      <p>{{ selectedOvertime?.date | date:'fullDate' }} | {{ selectedOvertime?.startTime }} - {{ selectedOvertime?.endTime }}</p>
+      
+      <div class="form-group">
+        <label>Reason (Optional)</label>
+        <textarea [(ngModel)]="applicationReason" rows="3" placeholder="Why do you want to work overtime?"></textarea>
+      </div>
+      
+      <div class="modal-actions">
+        <button class="btn-cancel" (click)="closeModal()">Cancel</button>
+        <button class="btn-submit" (click)="submitApplication()">Submit Application</button>
+      </div>
+    </div>
+  </div>
+</div>

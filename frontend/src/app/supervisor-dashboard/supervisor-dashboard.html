@@ -1,0 +1,191 @@
+<div class="dashboard" [class.dark]="isDarkTheme">
+  <div class="bg-orb"></div>
+  <div class="bg-orb-2"></div>
+  <div class="grid-pattern"></div>
+
+  <div class="header glass">
+    <div class="header-left">
+      <app-logo size="medium" [showText]="true"></app-logo>
+      
+      <div class="welcome-wrapper">
+        <h1>Welcome back, <span class="gradient-text">{{ userName }}</span></h1>
+        <p class="role-badge">Team Supervisor{{ departmentName ? ' - ' + departmentName : '' }} · {{ currentDate | date:'MMM d, y' }}</p>
+      </div>
+    </div>
+
+    <div class="header-actions">
+      <button class="theme-toggle" (click)="toggleTheme()">
+        <span class="toggle-icon">{{ isDarkTheme ? '☀️' : '🌙' }}</span>
+      </button>
+      <app-notification-bell></app-notification-bell>
+      <button class="icon-btn settings" (click)="goToDashboard()">
+        <span class="icon">🏠</span>
+        <span class="tooltip">My Dashboard</span>
+      </button>
+      <button class="logout-btn" (click)="logout()">
+        <span class="icon">🚪</span>
+        <span class="text">Logout</span>
+      </button>
+    </div>
+  </div>
+
+  <div class="stats-grid">
+    <div class="stat-card glass">
+      <div class="stat-icon" style="background: rgba(139, 92, 246, 0.2)">👥</div>
+      <div class="stat-content">
+        <h3>{{ teamMembers.length }}</h3>
+        <p>Team Members</p>
+        <div class="trend positive">↑ Active</div>
+      </div>
+    </div>
+    <div class="stat-card glass">
+      <div class="stat-icon" style="background: rgba(245, 158, 11, 0.2)">📋</div>
+      <div class="stat-content">
+        <h3>{{ totalPendingRequests }}</h3>
+        <p>Pending Requests</p>
+        <div class="trend" [class.positive]="totalPendingRequests > 0">Needs attention</div>
+      </div>
+    </div>
+    <div class="stat-card glass">
+      <div class="stat-icon" style="background: rgba(16, 185, 129, 0.2)">✅</div>
+      <div class="stat-content">
+        <h3>{{ teamOnLeaveToday }}</h3>
+        <p>On Leave Today</p>
+        <div class="trend">{{ teamOnLeaveToday > 0 ? 'Away' : 'All present' }}</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="content-card glass">
+    <div class="card-header">
+      <div class="header-left">
+        <h2>👥 My Team</h2>
+        <span class="badge">{{ teamMembers.length }}</span>
+      </div>
+      <button class="view-all" (click)="viewAllTeam()">View All →</button>
+    </div>
+
+    <div *ngIf="loadingTeam" class="loading-state">
+      <div class="spinner"></div>
+      <p>Loading team members...</p>
+    </div>
+
+    <div class="team-grid-modern" *ngIf="!loadingTeam">
+      <div class="team-card-modern" *ngFor="let member of teamMembers" (click)="viewEmployeeDetails(member)">
+        <div class="team-card-header">
+          <div class="team-avatar" [style.background]="getAvatarColor(member.name)">
+            {{ member.name.charAt(0) }}
+          </div>
+          <span class="status-dot" [class.online]="member.isActive"></span>
+        </div>
+        <h3>{{ member.name }}</h3>
+        <p class="text-muted">{{ member.department }}</p>
+        <div class="member-stats">
+          <div class="stat-item">
+            <span class="stat-value">{{ member.pendingRequests || 0 }}</span>
+            <span class="stat-label">Pending</span>
+          </div>
+          <div class="stat-item">
+            <span class="stat-value">{{ member.completedRequests || 0 }}</span>
+            <span class="stat-label">Completed</span>
+          </div>
+        </div>
+        <div class="progress-indicator" *ngIf="member.pendingRequests > 0">
+          <span class="progress-bar" [style.width]="'60%'"></span>
+        </div>
+      </div>
+
+      <div *ngIf="teamMembers.length === 0" class="empty-state">
+        <div class="empty-icon">👥</div>
+        <h3>No Team Members</h3>
+        <p>You don't have any team members assigned yet</p>
+      </div>
+    </div>
+  </div>
+
+  <div *ngIf="selectedEmployee" class="content-card glass employee-details">
+    <div class="card-header">
+      <div class="header-left">
+        <h2>📋 {{ selectedEmployee.name }} - Pending Requests</h2>
+        <span class="badge warning">{{ pendingRequests.length + lateArrivals.length }}</span>
+      </div>
+      <button class="btn-icon close" (click)="clearSelectedEmployee()">✕</button>
+    </div>
+
+    <div class="detail-tabs">
+      <button class="tab-btn" [class.active]="selectedDetailTab === 'leaves'" (click)="selectedDetailTab = 'leaves'">
+        Leave Requests ({{ pendingRequests.length }})
+      </button>
+      <button class="tab-btn" [class.active]="selectedDetailTab === 'late'" (click)="selectedDetailTab = 'late'">
+        Late Arrivals ({{ lateArrivals.length }})
+      </button>
+    </div>
+
+    <div class="requests-list" *ngIf="selectedDetailTab === 'leaves'">
+      <div class="request-card" *ngFor="let request of pendingRequests">
+        <div class="request-header">
+          <span class="request-type" [class]="request.leaveType">{{ request.leaveType }}</span>
+          <span class="request-date">{{ request.startDate | date:'MMM d' }} - {{ request.endDate | date:'MMM d' }}</span>
+        </div>
+        <p class="request-reason">{{ request.reason || 'No reason provided' }}</p>
+        <div class="request-footer">
+          <span class="status-badge pending">Pending</span>
+          <div class="request-actions">
+            <button class="btn-icon comment" (click)="addComment(request.leaveID)" title="Add comment">
+              💬
+            </button>
+            <button class="btn-icon forward" (click)="forwardToManager(request.leaveID)" title="Forward to manager">
+              ↗️
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div *ngIf="pendingRequests.length === 0" class="empty-state small">
+        <div class="empty-icon">✅</div>
+        <p>No pending leave requests</p>
+      </div>
+    </div>
+
+    <div class="late-list" *ngIf="selectedDetailTab === 'late'">
+      <div class="late-item" *ngFor="let late of lateArrivals">
+        <div class="late-header">
+          <span class="late-date">{{ late.date | date:'MMM d, h:mm a' }}</span>
+          <span class="status-dot pending"></span>
+        </div>
+        <p class="late-reason">{{ late.reason }}</p>
+        <div class="late-meta">
+          <span class="late-eta">Expected: {{ late.expectedArrival }}</span>
+          <a *ngIf="late.photoPath" [href]="late.photoPath" target="_blank" class="photo-link">📸 Photo</a>
+        </div>
+        <div class="late-footer">
+          <span class="status-badge pending">{{ late.status }}</span>
+          <div class="late-actions">
+            <button class="btn-icon comment" (click)="addComment(late.lateID)">💬</button>
+            <button class="btn-icon forward" (click)="forwardToManager(late.lateID)">↗️</button>
+          </div>
+        </div>
+      </div>
+
+      <div *ngIf="lateArrivals.length === 0" class="empty-state small">
+        <div class="empty-icon">⏰</div>
+        <p>No late arrivals</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="quick-actions-grid">
+    <button class="action-card glass" (click)="viewAllTeam()">
+      <span class="action-icon">👥</span>
+      <span class="action-text">View All Team</span>
+    </button>
+    <button class="action-card glass" (click)="generateReport()">
+      <span class="action-icon">📊</span>
+      <span class="action-text">Team Report</span>
+    </button>
+    <button class="action-card glass" (click)="contactManager()">
+      <span class="action-icon">📧</span>
+      <span class="action-text">Contact Manager</span>
+    </button>
+  </div>
+</div>

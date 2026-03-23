@@ -1,0 +1,403 @@
+<div class="dashboard" [class.dark]="isDarkTheme">
+  <div class="bg-orb"></div>
+  <div class="bg-orb-2"></div>
+  <div class="grid-pattern"></div>
+
+  <div class="header glass">
+    <div class="header-left">
+      <app-logo size="medium" [showText]="true"></app-logo>
+      
+      <div class="welcome-wrapper">
+        <h1>Welcome back, <span class="gradient-text">{{ userName }}</span></h1>
+        <p class="role-badge">{{ departmentName }} Manager · {{ currentDate | date:'MMM d, y' }}</p>
+      </div>
+    </div>
+
+    <div class="header-actions">
+      <button class="theme-toggle" (click)="toggleTheme()">
+        <span class="toggle-icon">{{ isDarkTheme ? '☀️' : '🌙' }}</span>
+      </button>
+      <app-notification-bell></app-notification-bell>
+      <button class="icon-btn settings" (click)="goToDashboard()">
+        <span class="icon">🏠</span>
+        <span class="tooltip">My Dashboard</span>
+      </button>
+      <button class="logout-btn" (click)="logout()">
+        <span class="icon">🚪</span>
+        <span class="text">Logout</span>
+      </button>
+    </div>
+  </div>
+
+  <div class="stats-grid">
+    <div class="stat-card glass">
+      <div class="stat-icon" style="background: rgba(79, 70, 229, 0.2)">👥</div>
+      <div class="stat-content">
+        <h3>{{ departmentEmployees.length }}</h3>
+        <p>Team Members</p>
+        <div class="trend positive">↑ 2 this month</div>
+      </div>
+    </div>
+    <div class="stat-card glass">
+      <div class="stat-icon" style="background: rgba(245, 158, 11, 0.2)">📋</div>
+      <div class="stat-content">
+        <h3>{{ pendingRequests.length }}</h3>
+        <p>Pending Leave</p>
+        <div class="trend" [class.positive]="pendingRequests.length > 0">Needs attention</div>
+      </div>
+    </div>
+    <div class="stat-card glass">
+      <div class="stat-icon" style="background: rgba(239, 68, 68, 0.2)">⏰</div>
+      <div class="stat-content">
+        <h3>{{ pendingLateArrivals.length }}</h3>
+        <p>Late Arrivals</p>
+        <div class="trend" [class.positive]="pendingLateArrivals.length > 0">Needs review</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="content-card glass">
+    <div class="card-header">
+      <div class="header-left">
+        <h2>🕐 Overtime Management</h2>
+      </div>
+      <button class="btn-primary small" (click)="openOvertimeModal()">+ Post Overtime</button>
+    </div>
+
+    <div *ngIf="loadingOvertime" class="loading-state">
+      <div class="spinner-small"></div>
+      <p>Loading overtime...</p>
+    </div>
+
+    <div class="overtime-list" *ngIf="!loadingOvertime">
+      <div class="overtime-item" *ngFor="let ot of myOvertimePosts">
+        <div class="overtime-header">
+          <div>
+            <h3>{{ ot.title }}</h3>
+            <span class="overtime-status" [class]="ot.status === 'Open' ? 'status-open' : 'status-closed'">
+              {{ ot.status }}
+            </span>
+          </div>
+          <div class="overtime-actions">
+            <button class="btn-view" (click)="viewApplications(ot)" *ngIf="ot.applications?.length > 0">
+              {{ ot.applications.length }} Applications
+            </button>
+            <button class="btn-close" (click)="closeOvertime(ot.overtimeID)" *ngIf="ot.status === 'Open'">
+              Close
+            </button>
+          </div>
+        </div>
+        <p class="overtime-desc">{{ ot.description }}</p>
+        <div class="overtime-details">
+          <span>📅 {{ ot.date | date:'MMM d, y' }}</span>
+          <span>⏰ {{ ot.startTime }} - {{ ot.endTime }}</span>
+          <span>👥 {{ ot.currentSlots }}/{{ ot.maxSlots }} slots filled</span>
+        </div>
+      </div>
+
+      <div *ngIf="myOvertimePosts.length === 0" class="empty-state small">
+        <div class="empty-icon">🕐</div>
+        <p>No overtime posted yet</p>
+        <button class="btn-primary small" (click)="openOvertimeModal()">Post Overtime</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="approvals-section glass" *ngIf="pendingSupervisorRequests.length > 0">
+    <div class="section-header">
+      <div class="header-left">
+        <h2>👥 Supervisor Requests</h2>
+        <span class="badge pulse">{{ pendingSupervisorRequests.length }}</span>
+      </div>
+      <button class="view-all" (click)="viewAllSupervisorRequests()">View All →</button>
+    </div>
+
+    <div class="approvals-grid">
+      <div class="approval-card" *ngFor="let req of pendingSupervisorRequests | slice:0:2">
+        <div class="approval-header">
+          <span class="status-indicator pulse"></span>
+          <span class="time">{{ getTimeAgo(req.date) }}</span>
+        </div>
+        <div class="approval-body">
+          <h3>{{ req.employeeName }}</h3>
+          <p class="email">{{ req.email }}</p>
+          <div class="request-details">
+            <span class="role-tag" style="background: rgba(255, 170, 0, 0.2); color: #ffaa00">
+              Requesting: SUPERVISOR
+            </span>
+            <span class="dept-tag">{{ req.department }}</span>
+          </div>
+        </div>
+        <div class="approval-actions">
+          <button class="btn-approve" (click)="approveSupervisor(req.id)">
+            <span class="icon">✓</span> Approve
+          </button>
+          <button class="btn-reject" (click)="rejectSupervisor(req.id)">
+            <span class="icon">✗</span> Reject
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="content-card glass">
+    <div class="card-header">
+      <div class="header-left">
+        <h2>📋 Pending Leave Requests</h2>
+        <span class="badge warning">{{ pendingRequests.length }}</span>
+      </div>
+      <button class="view-all" (click)="viewAllLeaves()">View All →</button>
+    </div>
+
+    <div *ngIf="loadingRequests" class="loading-state">
+      <div class="spinner"></div>
+      <p>Loading requests...</p>
+    </div>
+
+    <div class="table-container" *ngIf="!loadingRequests">
+      <table class="modern-table">
+        <thead>
+          <tr>
+            <th>Employee</th>
+            <th>Type</th>
+            <th>Duration</th>
+            <th>Reason</th>
+            <th>Actions</th>
+           </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let request of pendingRequests">
+            <td><strong>{{ request.employeeName }}</strong></td>
+            <td>
+              <span class="leave-type-badge">{{ request.leaveType }}</span>
+            </td>
+            <td>{{ request.startDate | date:'MMM d' }} - {{ request.endDate | date:'MMM d' }}</td>
+            <td>{{ request.reason || 'No reason provided' }}</td>
+            <td class="actions">
+              <button class="btn-approve small" (click)="approveRequest(request.leaveID)">
+                <span class="icon">✓</span>
+              </button>
+              <button class="btn-reject small" (click)="rejectRequest(request.leaveID)">
+                <span class="icon">✗</span>
+              </button>
+            </td>
+          </tr>
+          <tr *ngIf="pendingRequests.length === 0">
+            <td colspan="5" class="no-data">
+              <div class="empty-state small">
+                <span class="empty-icon">✅</span>
+                <p>No pending leave requests</p>
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="content-card glass">
+    <div class="card-header">
+      <div class="header-left">
+        <h2>⏰ Pending Late Arrivals</h2>
+        <span class="badge warning">{{ pendingLateArrivals.length }}</span>
+      </div>
+      <button class="view-all" (click)="viewAllLate()">View All →</button>
+    </div>
+
+    <div *ngIf="loadingLate" class="loading-state">
+      <div class="spinner-small"></div>
+    </div>
+
+    <div class="late-list" *ngIf="!loadingLate">
+      <div class="late-item" *ngFor="let late of pendingLateArrivals">
+        <div class="late-header">
+          <div class="employee-info">
+            <strong>{{ late.employeeName }}</strong>
+            <span class="late-date">{{ late.date | date:'MMM d, h:mm a' }}</span>
+          </div>
+          <span class="status-dot pending"></span>
+        </div>
+        <div class="late-body">
+          <p class="late-reason">{{ late.reason }}</p>
+          <span class="late-eta">Expected: {{ late.expectedArrival }}</span>
+        </div>
+        <div class="late-footer">
+          <a *ngIf="late.photoPath" [href]="late.photoPath" target="_blank" class="photo-link">
+            📸 View Photo
+          </a>
+          <button class="btn-approve small" (click)="reviewLateArrival(late.lateID)">
+            ✓ Mark Reviewed
+          </button>
+        </div>
+      </div>
+
+      <div *ngIf="pendingLateArrivals.length === 0" class="empty-state small">
+        <div class="empty-icon">⏰</div>
+        <p>No pending late arrivals</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="content-card glass">
+    <div class="card-header">
+      <div class="header-left">
+        <h2>👥 My Team</h2>
+        <span class="badge">{{ departmentEmployees.length }}</span>
+      </div>
+      <button class="view-all" (click)="viewAllTeam()">View All →</button>
+    </div>
+
+    <div *ngIf="loadingEmployees" class="loading-state small">
+      <div class="spinner-small"></div>
+    </div>
+
+    <div class="team-grid" *ngIf="!loadingEmployees">
+      <div class="team-card" *ngFor="let employee of departmentEmployees | slice:0:4" (click)="viewEmployeeDetails(employee)">
+        <div class="team-card-header">
+          <div class="team-avatar">{{ employee.name?.charAt(0) || '?' }}</div>
+          <span class="status-dot" [class.online]="employee.isActive"></span>
+        </div>
+        <h3>{{ employee.name }}</h3>
+        <p class="text-muted">{{ employee.role || 'Employee' }} • {{ employee.department }}</p>
+        <div class="employee-stats">
+          <span class="stat">
+            <span class="stat-icon">📋</span>
+            {{ employee.leaveCount || 0 }}
+          </span>
+          <span class="stat">
+            <span class="stat-icon">⏰</span>
+            {{ employee.lateCount || 0 }}
+          </span>
+        </div>
+      </div>
+      
+      <div *ngIf="departmentEmployees.length === 0" class="empty-state">
+        <div class="empty-icon">👥</div>
+        <p>No team members in your department</p>
+      </div>
+    </div>
+
+    <div class="view-more" *ngIf="departmentEmployees.length > 4">
+      <button class="btn-text" (click)="viewAllTeam()">+ {{ departmentEmployees.length - 4 }} more team members</button>
+    </div>
+  </div>
+
+  <div class="footer-stats glass">
+    <div class="stat-item">
+      <span class="label">Team on Leave Today</span>
+      <span class="value warning">{{ teamOnLeaveToday }}</span>
+    </div>
+    <div class="stat-item">
+      <span class="label">Late This Week</span>
+      <span class="value">{{ lateThisWeek }}</span>
+    </div>
+    <div class="stat-item">
+      <span class="label">Leave Balance Used</span>
+      <span class="value">{{ leaveBalanceUsed }}%</span>
+    </div>
+  </div>
+</div>
+
+<!-- Post Overtime Modal -->
+<div class="modal" *ngIf="showOvertimeModal" (click)="closeOvertimeModal()">
+  <div class="modal-content glass" (click)="$event.stopPropagation()">
+    <h3>Post Overtime Opportunity</h3>
+    
+    <div class="form-group">
+      <label>Title</label>
+      <input type="text" [(ngModel)]="newOvertime.title" placeholder="e.g., Weekend Project Work" class="form-control">
+    </div>
+    
+    <div class="form-group">
+      <label>Description</label>
+      <textarea [(ngModel)]="newOvertime.description" rows="3" placeholder="Describe the work and requirements" class="form-control"></textarea>
+    </div>
+    
+    <div class="form-row">
+      <div class="form-group">
+        <label>Date</label>
+        <input type="date" [(ngModel)]="newOvertime.date" class="form-control">
+      </div>
+      <div class="form-group">
+        <label>Start Time</label>
+        <input type="time" [(ngModel)]="newOvertime.startTime" class="form-control">
+      </div>
+      <div class="form-group">
+        <label>End Time</label>
+        <input type="time" [(ngModel)]="newOvertime.endTime" class="form-control">
+      </div>
+    </div>
+    
+    <div class="form-group">
+      <label>Number of Slots</label>
+      <input type="number" min="1" max="20" [(ngModel)]="newOvertime.maxSlots" class="form-control">
+    </div>
+    
+    <div class="modal-actions">
+      <button class="btn-cancel" (click)="closeOvertimeModal()">Cancel</button>
+      <button class="btn-submit" (click)="createOvertime()">Post Overtime</button>
+    </div>
+  </div>
+</div>
+
+<!-- Applications Modal -->
+<div class="modal" *ngIf="showApplicationsModal" (click)="closeApplicationsModal()">
+  <div class="modal-content glass" (click)="$event.stopPropagation()">
+    <h3>Applications for {{ selectedOvertime?.title }}</h3>
+    <p>{{ selectedOvertime?.date | date:'MMM d, y' }} | {{ selectedOvertime?.startTime }} - {{ selectedOvertime?.endTime }}</p>
+    
+    <div class="applications-list" *ngIf="overtimeApplications.length > 0">
+      <div class="application-item" *ngFor="let app of overtimeApplications">
+        <div class="application-info">
+          <strong>{{ app.name }}</strong>
+          <span class="status-badge" [class]="'status-' + app.status.toLowerCase()">{{ app.status }}</span>
+        </div>
+        <div class="application-reason" *ngIf="app.reason">
+          <span>Reason:</span> {{ app.reason }}
+        </div>
+        <div class="application-date">
+          Applied: {{ app.appliedAt | date:'MMM d, h:mm a' }}
+        </div>
+        <div class="application-actions" *ngIf="app.status === 'Pending'">
+          <button class="btn-approve small" (click)="approveApplication(app.applicationID)">Approve</button>
+          <button class="btn-reject small" (click)="rejectApplication(app.applicationID)">Reject</button>
+        </div>
+      </div>
+    </div>
+    
+    <div *ngIf="overtimeApplications.length === 0" class="empty-state small">
+      <p>No applications yet</p>
+    </div>
+    
+    <div class="modal-actions">
+      <button class="btn-cancel" (click)="closeApplicationsModal()">Close</button>
+    </div>
+  </div>
+</div>
+
+<!-- Employee Details Modal -->
+<div class="modal-overlay" *ngIf="showEmployeeModal" (click)="closeEmployeeModal()">
+  <div class="modal-container glass" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <h2>Employee Details</h2>
+      <button class="modal-close" (click)="closeEmployeeModal()">✕</button>
+    </div>
+    <div class="modal-body" *ngIf="selectedEmployee">
+      <div class="employee-avatar" [style.background]="getRoleColor(selectedEmployee.role)">
+        {{ selectedEmployee.name?.charAt(0) }}
+      </div>
+      <div class="employee-info">
+        <p><strong>Name:</strong> {{ selectedEmployee.name }}</p>
+        <p><strong>Email:</strong> {{ selectedEmployee.email }}</p>
+        <p><strong>Department:</strong> {{ selectedEmployee.department || 'Unassigned' }}</p>
+        <p><strong>Role:</strong> <span [style.color]="getRoleColor(selectedEmployee.role)">{{ selectedEmployee.role }}</span></p>
+        <p><strong>Gender:</strong> {{ selectedEmployee.gender || 'Not specified' }}</p>
+        <p><strong>Hire Date:</strong> {{ selectedEmployee.hireDate | date:'MMM d, y' }}</p>
+        <p><strong>Status:</strong> <span class="status-badge" [class.status-active]="selectedEmployee.isActive">Active</span></p>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-secondary" (click)="closeEmployeeModal()">Close</button>
+    </div>
+  </div>
+</div>

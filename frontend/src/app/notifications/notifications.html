@@ -1,0 +1,102 @@
+<div class="notifications-container">
+  <!-- Header -->
+  <div class="header">
+    <h1>Notifications</h1>
+    <button class="btn btn-secondary" (click)="goBack()">Back to Dashboard</button>
+  </div>
+
+  <!-- Filters Bar -->
+  <div class="filters-bar">
+    <div class="filter-group">
+      <label>Type:</label>
+      <select [(ngModel)]="filterType" (change)="applyFilters()">
+        <option value="all">All Types</option>
+        <option value="NewLeave">Leave Requests</option>
+        <option value="NewLate">Late Arrivals</option>
+        <option value="LeaveApproved">Approved</option>
+        <option value="LeaveRejected">Rejected</option>
+        <option value="LateReviewed">Reviewed</option>
+      </select>
+    </div>
+
+    <div class="filter-group">
+      <label>Status:</label>
+      <select [(ngModel)]="filterStatus" (change)="applyFilters()">
+        <option value="all">All</option>
+        <option value="unread">Unread</option>
+        <option value="read">Read</option>
+      </select>
+    </div>
+
+    <div class="filter-group search">
+      <label>Search:</label>
+      <input 
+        type="text" 
+        [(ngModel)]="searchTerm" 
+        (ngModelChange)="applyFilters()"
+        placeholder="Search notifications..."
+      >
+    </div>
+
+    <div class="action-buttons">
+      <button class="btn btn-primary btn-small" (click)="markAllAsRead()" *ngIf="filteredNotifications.some(n => !n.isRead)">
+        Mark All as Read
+      </button>
+      <button class="btn btn-danger btn-small" (click)="clearAll()" *ngIf="filteredNotifications.length > 0">
+        Clear All
+      </button>
+    </div>
+  </div>
+
+  <!-- Loading State -->
+  <div *ngIf="loading" class="loading">
+    Loading notifications...
+  </div>
+
+  <!-- Notifications List -->
+  <div *ngIf="!loading" class="notifications-list">
+    <div *ngIf="filteredNotifications.length === 0" class="empty-state">
+      <div class="empty-icon">📭</div>
+      <h3>No notifications found</h3>
+      <p>You're all caught up!</p>
+    </div>
+
+    <div *ngFor="let notification of paginatedNotifications" 
+         class="notification-card" 
+         [class.unread]="!notification.isRead">
+      <div class="notification-icon">
+        {{ getNotificationIcon(notification.type) }}
+      </div>
+      
+      <div class="notification-content">
+        <div class="notification-header">
+          <h3>{{ notification.title }}</h3>
+          <span class="notification-time">{{ getTimeAgo(notification.createdAt) }}</span>
+        </div>
+        <p class="notification-message">{{ notification.message }}</p>
+        <div class="notification-footer">
+          <span class="notification-type">{{ notification.type }}</span>
+          <div class="notification-actions">
+            <button class="btn-icon" (click)="markAsRead(notification.notificationID)" *ngIf="!notification.isRead" title="Mark as read">
+              ✓
+            </button>
+            <button class="btn-icon" (click)="deleteNotification(notification.notificationID)" title="Delete">
+              🗑️
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Pagination -->
+    <div class="pagination" *ngIf="filteredNotifications.length > pageSize">
+      <button class="btn-pagination" (click)="prevPage()" [disabled]="currentPage === 1">
+        ← Previous
+      </button>
+      <span class="page-info">Page {{ currentPage }} of {{ totalPages }}</span>
+      <button class="btn-pagination" (click)="nextPage()" [disabled]="currentPage === totalPages">
+        Next →
+      </button>
+    </div>
+  </div>
+</div>

@@ -1,0 +1,197 @@
+<div class="register-container">
+  <div class="register-card">
+    <h2>Create Account</h2>
+    <p class="subtitle">Smart Leave Management System</p>
+
+    <!-- Add this loading indicator while fetching email rules -->
+    <div *ngIf="!emailRules && !errorMessage" class="loading-rules">
+      <div class="spinner-small"></div>
+      <p>Loading email configuration...</p>
+    </div>
+
+    <form [formGroup]="registerForm" (ngSubmit)="onSubmit()" *ngIf="emailRules || errorMessage">
+      <!-- Email Type Selection -->
+      <div class="form-group">
+        <label>Email Type</label>
+        <select formControlName="emailType" class="form-control" (change)="onEmailTypeChange()">
+          <option value="">Select email type</option>
+          <option *ngFor="let rule of emailRules" [value]="rule.name">
+            {{ rule.name }} - {{ rule.description }}
+          </option>
+        </select>
+        <div *ngIf="registerForm.get('emailType')?.invalid && registerForm.get('emailType')?.touched" class="error">
+          Please select email type
+        </div>
+      </div>
+
+      <!-- Email -->
+      <div class="form-group">
+        <label>Email</label>
+        <input 
+          type="email" 
+          class="form-control" 
+          formControlName="email"
+          placeholder="Enter your email"
+        >
+        <div *ngIf="registerForm.get('email')?.invalid && registerForm.get('email')?.touched" class="error">
+          <span *ngIf="registerForm.get('email')?.errors?.['required']">Email is required</span>
+          <span *ngIf="getEmailErrorMessage()">{{ getEmailErrorMessage() }}</span>
+        </div>
+        <small *ngIf="selectedRule" class="hint">
+          Format: {{ selectedRule.description }}
+        </small>
+      </div>
+
+      <!-- Full Name -->
+      <div class="form-group">
+        <label>Full Name</label>
+        <input 
+          type="text" 
+          class="form-control" 
+          formControlName="name"
+          placeholder="Enter your full name"
+        >
+        <div *ngIf="registerForm.get('name')?.invalid && registerForm.get('name')?.touched" class="error">
+          Name is required
+        </div>
+      </div>
+
+      <!-- Department -->
+      <div class="form-group">
+        <label>Department</label>
+        <select formControlName="department" class="form-control">
+          <option value="">Select department</option>
+          <option *ngFor="let dept of departments" [value]="dept">
+            {{ dept }}
+          </option>
+        </select>
+        <div *ngIf="registerForm.get('department')?.invalid && registerForm.get('department')?.touched" class="error">
+          Please select department
+        </div>
+      </div>
+
+      <!-- Role Selection -->
+      <div class="form-group">
+        <label>Requested Role</label>
+        <select formControlName="requestedRole" class="form-control">
+          <option *ngFor="let role of roles" [value]="role.value">
+            {{ role.label }}
+          </option>
+        </select>
+        <small class="hint" [class.text-warning]="registerForm.get('requestedRole')?.value !== 'Employee'">
+          {{ getRoleDescription(registerForm.get('requestedRole')?.value) }}
+        </small>
+        <div *ngIf="registerForm.get('requestedRole')?.value !== 'Employee'" class="approval-notice">
+          ⏳ This role requires admin approval
+        </div>
+      </div>
+
+      <!-- Gender -->
+      <div class="form-group">
+        <label>Gender</label>
+        <select formControlName="gender" class="form-control">
+          <option value="">Select gender</option>
+          <option value="Male">Male</option>
+          <option value="Female">Female</option>
+          <option value="Other">Other</option>
+        </select>
+        <div *ngIf="registerForm.get('gender')?.invalid && registerForm.get('gender')?.touched" class="error">
+          Please select gender
+        </div>
+      </div>
+
+      <!-- Date of Birth -->
+      <div class="form-group">
+        <label>Date of Birth</label>
+        <input 
+          type="date" 
+          class="form-control" 
+          formControlName="dateOfBirth"
+          [max]="today"
+        >
+        <div *ngIf="registerForm.get('dateOfBirth')?.invalid && registerForm.get('dateOfBirth')?.touched" class="error">
+          Date of birth is required
+        </div>
+      </div>
+
+      <!-- Password -->
+      <div class="form-group">
+        <label>Password</label>
+        <div class="password-wrapper">
+          <input 
+            [type]="showPassword ? 'text' : 'password'"
+            class="form-control" 
+            formControlName="password"
+            placeholder="Minimum 6 characters"
+          >
+          <span class="password-toggle" (click)="showPassword = !showPassword">
+            {{ showPassword ? '👁️' : '👁️‍🗨️' }}
+          </span>
+        </div>
+        <div *ngIf="registerForm.get('password')?.invalid && registerForm.get('password')?.touched" class="error">
+          <span *ngIf="registerForm.get('password')?.errors?.['required']">Password is required</span>
+          <span *ngIf="registerForm.get('password')?.errors?.['minlength']">
+            Password must be at least 6 characters
+          </span>
+        </div>
+      </div>
+
+      <!-- Confirm Password -->
+      <div class="form-group">
+        <label>Confirm Password</label>
+        <div class="password-wrapper">
+          <input 
+            [type]="showConfirmPassword ? 'text' : 'password'"
+            class="form-control" 
+            formControlName="confirmPassword"
+            placeholder="Re-enter your password"
+          >
+          <span class="password-toggle" (click)="showConfirmPassword = !showConfirmPassword">
+            {{ showConfirmPassword ? '👁️' : '👁️‍🗨️' }}
+          </span>
+        </div>
+        <div *ngIf="registerForm.get('confirmPassword')?.touched" class="error">
+          <span *ngIf="registerForm.errors?.['passwordMismatch']">
+            Passwords do not match
+          </span>
+        </div>
+      </div>
+
+      <!-- API Error Message -->
+      <div *ngIf="apiError" class="api-error">
+        <span class="error-icon">⚠️</span>
+        <div class="error-content">
+          <strong>Connection Error</strong>
+          <p>Could not load email validation rules. Using default settings.</p>
+        </div>
+      </div>
+
+      <!-- Messages -->
+      <div *ngIf="errorMessage && !apiError" class="error-message">
+        {{ errorMessage }}
+      </div>
+
+      <div *ngIf="successMessage" class="success-message" [class.pending]="isPending">
+        {{ successMessage }}
+      </div>
+
+      <!-- Submit Button -->
+      <button 
+        type="submit" 
+        class="btn btn-primary" 
+        [disabled]="registerForm.invalid || isLoading"
+      >
+        <span class="btn-text">{{ isLoading ? 'Creating Account...' : 'Register' }}</span>
+        <span class="btn-loader" *ngIf="isLoading">
+          <span class="dot"></span>
+          <span class="dot"></span>
+          <span class="dot"></span>
+        </span>
+      </button>
+    </form>
+
+    <p class="login-link">
+      Already have an account? <a routerLink="/login">Sign in</a>
+    </p>
+  </div>
+</div>

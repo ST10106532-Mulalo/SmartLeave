@@ -1,0 +1,148 @@
+<div class="login-container" [class.dark]="isDarkTheme">
+  <!-- Animated Background Elements -->
+  <div class="bg-grid"></div>
+  <div class="bg-orb-1"></div>
+  <div class="bg-orb-2"></div>
+  <div class="bg-orb-3"></div>
+  
+  <!-- Floating Particles -->
+  <div class="particles">
+    <div class="particle" *ngFor="let i of [1,2,3,4,5,6,7,8]"></div>
+  </div>
+
+  <!-- Main Login Card -->
+  <div class="login-card glass">
+    <!-- Logo Section -->
+    <div class="logo-section">
+      <div class="logo-icon">
+        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M12 2L2 7L12 12L22 7L12 2Z" stroke="url(#gradient)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          <path d="M2 17L12 22L22 17" stroke="url(#gradient)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          <path d="M2 12L12 17L22 12" stroke="url(#gradient)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          <defs>
+            <linearGradient id="gradient" x1="2" y1="2" x2="22" y2="22" gradientUnits="userSpaceOnUse">
+              <stop stop-color="#4F46E5"/>
+              <stop offset="1" stop-color="#8B5CF6"/>
+            </linearGradient>
+          </defs>
+        </svg>
+      </div>
+      <h1 class="gradient-text">SmartLeave<span class="accent">.</span></h1>
+      <p class="subtitle">Enterprise Leave Management System</p>
+    </div>
+
+    <!-- Welcome Message -->
+    <div class="welcome-message">
+      <span class="line"></span>
+      <p>Welcome back</p>
+      <span class="line"></span>
+    </div>
+
+    <!-- Login Form -->
+    <form (ngSubmit)="onSubmit()" #loginForm="ngForm" class="login-form">
+      <!-- Email Field with Floating Label -->
+      <div class="input-group" [class.focused]="emailFocused" [class.has-value]="credentials.email">
+        <input type="email"
+               id="email"
+               [(ngModel)]="credentials.email"
+               name="email"
+               required
+               email
+               #emailInput="ngModel"
+               (focus)="emailFocused = true"
+               (blur)="emailFocused = false"
+               autocomplete="off" />
+        <label for="email" [class.active]="emailFocused || credentials.email">
+          <span class="label-icon">📧</span>
+          Email Address
+        </label>
+        <div class="input-glow"></div>
+        <div class="input-border"></div>
+      </div>
+      <div *ngIf="emailInput.invalid && emailInput.touched" class="error-message slide-down">
+        <span class="error-icon">⚠️</span>
+        <span>Valid email is required</span>
+      </div>
+
+      <!-- Password Field with Floating Label and Visibility Toggle -->
+      <div class="input-group password-group" [class.focused]="passwordFocused" [class.has-value]="credentials.password">
+        <div class="password-wrapper">
+          <input [type]="showPassword ? 'text' : 'password'"
+                 id="password"
+                 [(ngModel)]="credentials.password"
+                 name="password"
+                 required
+                 minlength="6"
+                 #passwordInput="ngModel"
+                 (focus)="passwordFocused = true"
+                 (blur)="passwordFocused = false"
+                 autocomplete="new-password" />
+          <span class="password-toggle" (click)="togglePasswordVisibility()">
+            {{ showPassword ? '👁️' : '👁️‍🗨️' }}
+          </span>
+        </div>
+        <label for="password" [class.active]="passwordFocused || credentials.password">
+          <span class="label-icon">🔒</span>
+          Password
+        </label>
+        <div class="input-glow"></div>
+        <div class="input-border"></div>
+      </div>
+      <div *ngIf="passwordInput.invalid && passwordInput.touched" class="error-message slide-down">
+        <span class="error-icon">⚠️</span>
+        <span>Password must be at least 6 characters</span>
+      </div>
+
+      <!-- Forgot Password Link -->
+      <div class="forgot-password">
+        <a href="#" class="forgot-link">Forgot password?</a>
+      </div>
+
+      <!-- Error Message -->
+      <div *ngIf="errorMessage" class="error-alert shake">
+        <span class="alert-icon">⚠️</span>
+        <span>{{ errorMessage }}</span>
+      </div>
+
+      <!-- Submit Button with Loading State -->
+      <button type="submit"
+              class="submit-btn"
+              [class.loading]="isLoading"
+              [disabled]="loginForm.invalid || isLoading">
+        <span class="btn-text">{{ isLoading ? 'Authenticating...' : 'Sign In' }}</span>
+        <span class="btn-loader" *ngIf="isLoading">
+          <span class="dot"></span>
+          <span class="dot"></span>
+          <span class="dot"></span>
+        </span>
+        <span class="btn-glow"></span>
+      </button>
+
+      <!-- Register Link -->
+      <div class="register-section">
+        <p class="register-text">New to SmartLeave?</p>
+        <a routerLink="/register" class="register-link">
+          <span>Create Account</span>
+          <span class="link-arrow">→</span>
+        </a>
+      </div>
+
+      <!-- Corporate Footer -->
+      <div class="corporate-footer">
+        <span class="footer-text">© 2026 SmartLeave. All rights reserved.</span>
+        <div class="footer-links">
+          <a href="#">Privacy</a>
+          <span class="separator">•</span>
+          <a href="#">Terms</a>
+          <span class="separator">•</span>
+          <a href="#">Security</a>
+        </div>
+      </div>
+    </form>
+  </div>
+
+  <!-- Version Badge -->
+  <div class="version-badge">
+    <span>Enterprise v2.0</span>
+  </div>
+</div>

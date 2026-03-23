@@ -1,0 +1,218 @@
+<div class="settings-container" [class.dark]="isDarkTheme">
+  <!-- Animated Background -->
+  <div class="bg-orb"></div>
+  <div class="bg-orb-2"></div>
+  <div class="grid-pattern"></div>
+
+  <div class="settings-header glass">
+    <div class="header-left">
+      <app-logo size="medium" [showText]="true"></app-logo>
+      <h1>Settings</h1>
+    </div>
+    <button class="btn-back" (click)="goBack()">
+      <span class="icon">←</span> Back to Dashboard
+    </button>
+  </div>
+
+  <div class="settings-content">
+    <!-- Notification Settings -->
+    <div class="settings-section glass">
+      <h2>🔊 Notification Settings</h2>
+      
+      <div class="setting-item">
+        <div class="setting-info">
+          <label>Master Sound</label>
+          <p class="setting-description">Enable or disable all notification sounds</p>
+        </div>
+        <div class="toggle-switch">
+          <input type="checkbox" id="masterSound" [(ngModel)]="settings.masterSound">
+          <label for="masterSound" class="toggle-label"></label>
+        </div>
+      </div>
+
+      <div class="setting-item">
+        <div class="setting-info">
+          <label>Volume</label>
+          <p class="setting-description">Adjust notification volume</p>
+        </div>
+        <div class="volume-control">
+          <input type="range" min="0" max="100" [(ngModel)]="settings.volume" class="volume-slider">
+          <span class="volume-value">{{ settings.volume }}%</span>
+          <button class="btn-test" (click)="playTestSound()">Test</button>
+        </div>
+      </div>
+
+      <div class="setting-item">
+        <div class="setting-info">
+          <label>Notification Sound</label>
+          <p class="setting-description">Choose your preferred notification sound</p>
+        </div>
+        <select [(ngModel)]="settings.selectedSound" class="sound-select">
+          <option *ngFor="let sound of soundOptions" [value]="sound.value">
+            {{ sound.label }}
+          </option>
+        </select>
+      </div>
+
+      <div class="setting-item">
+        <div class="setting-info">
+          <label>Vibration</label>
+          <p class="setting-description">Vibrate device on new notifications</p>
+        </div>
+        <div class="vibration-control">
+          <div class="toggle-switch">
+            <input type="checkbox" id="vibration" [(ngModel)]="settings.vibration">
+            <label for="vibration" class="toggle-label"></label>
+          </div>
+          <button class="btn-test" (click)="testVibration()" [disabled]="!settings.vibration">
+            Test Vibration
+          </button>
+        </div>
+      </div>
+
+      <div class="setting-item">
+        <div class="setting-info">
+          <label>Notification Duration</label>
+          <p class="setting-description">How long notifications stay visible</p>
+        </div>
+        <select [(ngModel)]="settings.notificationDuration" class="duration-select">
+          <option [value]="30">30 seconds</option>
+          <option [value]="60">1 minute</option>
+          <option [value]="120">2 minutes</option>
+          <option [value]="0">Until viewed</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- Display Settings -->
+    <div class="settings-section glass">
+      <h2>🌓 Display Settings</h2>
+      
+      <div class="setting-item">
+        <div class="setting-info">
+          <label>Theme</label>
+          <p class="setting-description">Choose your preferred theme</p>
+        </div>
+        <div class="theme-options">
+          <button class="theme-btn" [class.active]="settings.theme === 'Light'" (click)="settings.theme = 'Light'">
+            🌞 Light
+          </button>
+          <button class="theme-btn" [class.active]="settings.theme === 'Dark'" (click)="settings.theme = 'Dark'">
+            🌙 Dark
+          </button>
+          <button class="theme-btn" [class.active]="settings.theme === 'Auto'" (click)="settings.theme = 'Auto'">
+            ⚙️ Auto
+          </button>
+        </div>
+      </div>
+
+      <div class="setting-item">
+        <div class="setting-info">
+          <label>Date Format</label>
+          <p class="setting-description">How dates are displayed throughout the app</p>
+        </div>
+        <div class="date-options">
+          <button class="date-btn" [class.active]="settings.dateFormat === 'MM/DD/YYYY'" 
+                  (click)="settings.dateFormat = 'MM/DD/YYYY'">
+            MM/DD/YYYY
+          </button>
+          <button class="date-btn" [class.active]="settings.dateFormat === 'DD/MM/YYYY'" 
+                  (click)="settings.dateFormat = 'DD/MM/YYYY'">
+            DD/MM/YYYY
+          </button>
+          <button class="date-btn" [class.active]="settings.dateFormat === 'YYYY-MM-DD'" 
+                  (click)="settings.dateFormat = 'YYYY-MM-DD'">
+            YYYY-MM-DD
+          </button>
+        </div>
+      </div>
+
+      <div class="setting-item">
+        <div class="setting-info">
+          <label>Compact View</label>
+          <p class="setting-description">Show more information in less space</p>
+        </div>
+        <div class="toggle-switch">
+          <input type="checkbox" id="compactView" [(ngModel)]="settings.compactView">
+          <label for="compactView" class="toggle-label"></label>
+        </div>
+      </div>
+    </div>
+
+    <!-- Email Settings -->
+    <div class="settings-section glass">
+      <h2>📧 Email Settings</h2>
+      
+      <div class="setting-item">
+        <div class="setting-info">
+          <label>Email Notifications</label>
+          <p class="setting-description">Receive email notifications for important updates</p>
+        </div>
+        <div class="toggle-switch">
+          <input type="checkbox" id="emailNotifications" [(ngModel)]="settings.emailNotifications">
+          <label for="emailNotifications" class="toggle-label"></label>
+        </div>
+      </div>
+
+      <div class="setting-item">
+        <div class="setting-info">
+          <label>Daily Digest</label>
+          <p class="setting-description">Receive a daily summary of all notifications</p>
+        </div>
+        <div class="toggle-switch">
+          <input type="checkbox" id="dailyDigest" [(ngModel)]="settings.dailyDigest">
+          <label for="dailyDigest" class="toggle-label"></label>
+        </div>
+      </div>
+
+      <div class="setting-item" *ngIf="settings.dailyDigest">
+        <div class="setting-info">
+          <label>Digest Time</label>
+          <p class="setting-description">When to send the daily digest</p>
+        </div>
+        <input type="time" [(ngModel)]="settings.digestTime" class="time-input">
+      </div>
+    </div>
+
+    <!-- Privacy Settings -->
+    <div class="settings-section glass">
+      <h2>🔒 Privacy Settings</h2>
+      
+      <div class="setting-item">
+        <div class="setting-info">
+          <label>Show Profile to Team</label>
+          <p class="setting-description">Allow team members to see your profile information</p>
+        </div>
+        <div class="toggle-switch">
+          <input type="checkbox" id="showProfile" [(ngModel)]="settings.showProfileToTeam">
+          <label for="showProfile" class="toggle-label"></label>
+        </div>
+      </div>
+
+      <div class="setting-item">
+        <div class="setting-info">
+          <label>Show Email to Team</label>
+          <p class="setting-description">Allow team members to see your email address</p>
+        </div>
+        <div class="toggle-switch">
+          <input type="checkbox" id="showEmail" [(ngModel)]="settings.showEmailToTeam">
+          <label for="showEmail" class="toggle-label"></label>
+        </div>
+      </div>
+    </div>
+
+    <!-- Save Button -->
+    <div class="settings-actions">
+      <button class="btn-save" (click)="saveSettings()" [disabled]="saving">
+        {{ saving ? 'Saving...' : '💾 Save Changes' }}
+      </button>
+      <button class="btn-reset" (click)="resetToDefault()">
+        ↺ Reset to Default
+      </button>
+    </div>
+
+    <div class="success-message" *ngIf="showSuccess">
+      <span class="success-icon">✅</span> Settings saved successfully!
+    </div>
+  </div>
+</div>

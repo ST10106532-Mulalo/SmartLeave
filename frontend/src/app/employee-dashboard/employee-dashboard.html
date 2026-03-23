@@ -1,0 +1,279 @@
+<div class="dashboard" [class.dark]="isDarkTheme">
+  <div class="bg-orb"></div>
+  <div class="bg-orb-2"></div>
+  <div class="grid-pattern"></div>
+
+  <div class="header glass">
+    <div class="header-left">
+      <app-logo size="medium" [showText]="true"></app-logo>
+      
+      <div class="welcome-wrapper">
+        <h1>Welcome back, <span class="gradient-text">{{ userName }}</span></h1>
+        <p class="role-badge">{{ getRoleDisplay() }}{{ departmentName ? ' - ' + departmentName : '' }}</p>
+      </div>
+    </div>
+
+    <div class="header-actions">
+      <button class="theme-toggle" (click)="toggleTheme()" [class.dark]="isDarkTheme">
+        <span class="toggle-icon">{{ isDarkTheme ? '☀️' : '🌙' }}</span>
+      </button>
+      <app-notification-bell></app-notification-bell>
+      <button class="icon-btn settings" (click)="navigateToSettings()">
+        <span class="icon">⚙️</span>
+        <span class="tooltip">Settings</span>
+      </button>
+      <div class="profile-menu">
+        <div class="avatar" [style.background]="getAvatarGradient()">
+          {{ userName.charAt(0) }}
+        </div>
+        <button class="logout-btn" (click)="logout()">
+          <span class="icon">🚪</span>
+          <span class="text">Logout</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <div class="stats-grid">
+    <div class="stat-card glass" *ngFor="let stat of stats">
+      <div class="stat-icon" [style.background]="stat.color + '20'">
+        <span>{{ stat.icon }}</span>
+      </div>
+      <div class="stat-content">
+        <h3>{{ stat.value }}</h3>
+        <p>{{ stat.label }}</p>
+        <div class="trend" [class.positive]="stat.trend > 0">
+          <span>{{ stat.trend > 0 ? '↑' : '↓' }} {{ Math.abs(stat.trend) }}%</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Overtime Badge -->
+  <div class="overtime-badge" *ngIf="showOvertimeBadge" (click)="viewOvertime()">
+    <div class="badge-pulse"></div>
+    <div class="badge-content">
+      <span class="badge-icon">🕐</span>
+      <span class="badge-text">{{ availableOvertimeCount }} Overtime {{ availableOvertimeCount === 1 ? 'Opportunity' : 'Opportunities' }}</span>
+    </div>
+  </div>
+
+  <div class="quick-actions">
+    <button class="action-card glass primary" (click)="navigateToLeaveRequest()">
+      <div class="action-icon">📋</div>
+      <div class="action-content">
+        <span class="action-title">Apply for Leave</span>
+        <span class="action-desc">Request time off</span>
+      </div>
+      <span class="action-arrow">→</span>
+    </button>
+
+    <button class="action-card glass warning" (click)="navigateToLateArrival()">
+      <div class="action-icon">⏰</div>
+      <div class="action-content">
+        <span class="action-title">Report Running Late</span>
+        <span class="action-desc">Notify your manager</span>
+      </div>
+      <span class="action-arrow">→</span>
+    </button>
+
+    <ng-container *ngIf="authService.canSupervise">
+      <button class="action-card glass info" (click)="navigateToTeamView()">
+        <div class="action-icon">👥</div>
+        <div class="action-content">
+          <span class="action-title">My Team</span>
+          <span class="action-desc">View team members</span>
+        </div>
+        <span class="action-arrow">→</span>
+      </button>
+    </ng-container>
+
+    <ng-container *ngIf="authService.canApprove">
+      <button class="action-card glass success" (click)="navigateToApprovals()">
+        <div class="action-icon">✅</div>
+        <div class="action-content">
+          <span class="action-title">Pending Approvals</span>
+          <span class="action-desc">{{ pendingApprovalCount }} requests</span>
+        </div>
+        <span class="action-arrow">→</span>
+      </button>
+    </ng-container>
+
+    <ng-container *ngIf="authService.canViewAll">
+      <button class="action-card glass admin" (click)="navigateToAdminPanel()">
+        <div class="action-icon">⚙️</div>
+        <div class="action-content">
+          <span class="action-title">Admin Panel</span>
+          <span class="action-desc">System management</span>
+        </div>
+        <span class="action-arrow">→</span>
+      </button>
+    </ng-container>
+  </div>
+
+  <div class="content-grid">
+    <div class="content-card glass">
+      <div class="card-header">
+        <div class="header-left">
+          <h2>My Leave Requests</h2>
+          <span class="badge">{{ leaveRequests.length }}</span>
+        </div>
+        <button class="view-all" (click)="viewAllLeaves()">View All →</button>
+      </div>
+
+      <div *ngIf="loadingLeaves" class="loading-state">
+        <div class="spinner"></div>
+        <p>Loading your requests...</p>
+      </div>
+
+      <div class="requests-list" *ngIf="!loadingLeaves">
+        <div class="request-item" *ngFor="let leave of leaveRequests | slice:0:3">
+          <div class="request-left">
+            <span class="type-icon" [class]="leave.leaveType?.name">
+              {{ getLeaveIcon(leave.leaveType?.name) }}
+            </span>
+            <div class="request-info">
+              <span class="leave-type">{{ leave.leaveType?.name || 'Leave' }}</span>
+              <span class="leave-dates">
+                {{ leave.startDate | date:'MMM d' }} - {{ leave.endDate | date:'MMM d, y' }}
+              </span>
+            </div>
+          </div>
+          <div class="request-right">
+            <span class="status-badge" [class]="leave.status">
+              {{ leave.status }}
+            </span>
+          </div>
+        </div>
+
+        <div *ngIf="leaveRequests.length === 0" class="empty-state">
+          <div class="empty-icon">📭</div>
+          <p>No leave requests yet</p>
+          <button class="btn-primary" (click)="navigateToLeaveRequest()">
+            Apply for Leave
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <div class="content-card glass">
+      <div class="card-header">
+        <div class="header-left">
+          <h2>Recent Late Arrivals</h2>
+          <span class="badge">{{ lateArrivals.length }}</span>
+        </div>
+        <button class="view-all" (click)="viewAllLate()">View All →</button>
+      </div>
+
+      <div *ngIf="loadingLate" class="loading-state small">
+        <div class="spinner-small"></div>
+      </div>
+
+      <div class="late-list" *ngIf="!loadingLate">
+        <div class="late-item" *ngFor="let late of lateArrivals | slice:0:2">
+          <div class="late-header">
+            <span class="late-date">{{ late.date | date:'MMM d, h:mm a' }}</span>
+            <span class="status-dot" [class.reviewed]="late.status === 'Reviewed'"></span>
+          </div>
+          <div class="late-body">
+            <p class="late-reason">{{ late.reason }}</p>
+            <span class="late-eta">Expected: {{ late.expectedArrival }}</span>
+          </div>
+        </div>
+
+        <div *ngIf="lateArrivals.length === 0" class="empty-state small">
+          <div class="empty-icon">⏰</div>
+          <p>No late arrivals recorded</p>
+        </div>
+      </div>
+    </div>
+    
+    <div class="content-card glass" *ngIf="authService.canSupervise">
+      <div class="card-header">
+        <div class="header-left">
+          <h2>👥 Team Pending</h2>
+          <span class="badge warning">{{ teamPendingCount }}</span>
+        </div>
+        <button class="view-all" (click)="navigateToSupervisorView()">Manage →</button>
+      </div>
+      <div class="team-preview">
+        <div class="preview-item" *ngFor="let req of teamPendingRequests | slice:0:2">
+          <span class="emp-name">{{ req.employeeName }}</span>
+          <span class="req-type">{{ req.leaveType?.name || req.leaveType }}</span>
+          <span class="status-dot pending"></span>
+        </div>
+        <div *ngIf="teamPendingCount === 0" class="empty-state small">
+          <p>No pending team requests</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="content-card glass" *ngIf="authService.canApprove">
+      <div class="card-header">
+        <div class="header-left">
+          <h2>📊 Department Overview</h2>
+        </div>
+        <button class="view-all" (click)="navigateToManagerView()">Details →</button>
+      </div>
+      <div class="dept-stats">
+        <div class="dept-stat-item">
+          <span class="stat-label">Team Size</span>
+          <span class="stat-value">{{ departmentSize }}</span>
+        </div>
+        <div class="dept-stat-item">
+          <span class="stat-label">Pending Leaves</span>
+          <span class="stat-value warning">{{ departmentPendingLeaves }}</span>
+        </div>
+        <div class="dept-stat-item">
+          <span class="stat-label">Late Today</span>
+          <span class="stat-value info">{{ departmentLateToday }}</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="content-card glass" *ngIf="authService.canViewAll">
+      <div class="card-header">
+        <div class="header-left">
+          <h2>⚡ System Health</h2>
+        </div>
+        <button class="view-all" (click)="navigateToAdminPanel()">Manage →</button>
+      </div>
+      <div class="system-stats">
+        <div class="health-item">
+          <span class="label">Active Users</span>
+          <span class="value">{{ totalActiveUsers }}</span>
+          <span class="trend positive">↑ 5%</span>
+        </div>
+        <div class="health-item">
+          <span class="label">Pending Approvals</span>
+          <span class="value warning">{{ pendingApprovalCount }}</span>
+        </div>
+        <div class="health-item">
+          <span class="label">Server Status</span>
+          <span class="value success">✅ Online</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="content-card glass">
+      <div class="card-header">
+        <h2>📅 Upcoming</h2>
+        <span class="badge">3</span>
+      </div>
+      <div class="holiday-list">
+        <div class="holiday-item">
+          <span class="holiday-date">Mar 21</span>
+          <span class="holiday-name">Human Rights Day</span>
+        </div>
+        <div class="holiday-item">
+          <span class="holiday-date">Apr 27</span>
+          <span class="holiday-name">Freedom Day</span>
+        </div>
+        <div class="holiday-item">
+          <span class="holiday-date">May 1</span>
+          <span class="holiday-name">Workers' Day</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

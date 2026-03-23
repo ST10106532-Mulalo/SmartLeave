@@ -1,0 +1,50 @@
+<div class="form-container">
+  <div class="header">
+    <!-- REPLACED: Add cyberpunk logo -->
+    <div class="header-left">
+      <app-logo size="medium" [showText]="true"></app-logo>
+      <h2>Report Running Late</h2>
+    </div>
+    <span class="user-name">{{ userName }}</span>
+  </div>
+
+  <form (ngSubmit)="onSubmit()" #lateForm="ngForm">
+    <div class="form-group">
+      <label>Date:</label>
+      <input type="date" class="form-control" [(ngModel)]="lateData.date" name="date" required readonly>
+      <small class="text-muted">Today's date is auto-filled</small>
+    </div>
+
+    <div class="form-group">
+      <label>Expected Arrival Time:</label>
+      <input type="time" class="form-control" [(ngModel)]="lateData.expectedArrival" name="expectedArrival" required>
+    </div>
+
+    <div class="form-group">
+      <label>Reason for Running Late:</label>
+      <textarea class="form-control" rows="4" [(ngModel)]="lateData.reason" name="reason" required placeholder="Please explain why you'll be late..."></textarea>
+    </div>
+
+    <!-- Photo Upload Section -->
+    <div class="form-group">
+      <label>Photo Evidence (Optional)</label>
+      <input 
+        type="file" 
+        class="form-control" 
+        (change)="onFileSelected($event)" 
+        accept=".jpg,.jpeg,.png,.gif"
+      >
+      <small class="text-muted">
+        Upload a photo as proof (traffic, accident, etc.)
+        <span *ngIf="selectedFile" class="file-name">Selected: {{ selectedFile.name }}</span>
+      </small>
+    </div>
+
+    <div class="button-group">
+      <button type="submit" class="btn btn-primary" [disabled]="!lateForm.form.valid || isLoading">
+        {{ isLoading ? 'Submitting...' : 'Submit Notification' }}
+      </button>
+      <button type="button" class="btn btn-secondary" (click)="cancel()">Cancel</button>
+    </div>
+  </form>
+</div>

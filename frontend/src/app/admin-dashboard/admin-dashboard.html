@@ -1,0 +1,429 @@
+<div class="dashboard" [class.dark]="isDarkTheme">
+  <div class="bg-orb"></div>
+  <div class="bg-orb-2"></div>
+  <div class="grid-pattern"></div>
+
+  <div class="header glass">
+    <div class="header-left">
+      <app-logo size="medium" [showText]="true"></app-logo>
+      
+      <div class="welcome-wrapper">
+        <h1>Command Center</h1>
+        <p class="role-badge">Administrator{{ departmentName ? ' - ' + departmentName : '' }} · {{ currentDate | date:'MMM d, y' }}</p>
+      </div>
+    </div>
+    <div class="header-actions">
+      <button class="theme-toggle" (click)="toggleTheme()">
+        <span class="toggle-icon">{{ isDarkTheme ? '☀️' : '🌙' }}</span>
+      </button>
+      <app-notification-bell></app-notification-bell>
+      <button class="icon-btn" (click)="goToDashboard()">
+        <span class="icon">🏠</span>
+        <span class="tooltip">My Dashboard</span>
+      </button>
+      <button class="logout-btn" (click)="logout()">
+        <span class="icon">🚪</span>
+        <span class="text">Logout</span>
+      </button>
+    </div>
+  </div>
+
+  <div class="message-container" *ngIf="successMessage || errorMessage">
+    <div class="success-message" *ngIf="successMessage">
+      {{ successMessage }}
+    </div>
+    <div class="error-message" *ngIf="errorMessage">
+      {{ errorMessage }}
+    </div>
+  </div>
+
+  <div class="stats-grid">
+    <div class="stat-card glass" (click)="changeView('employees')">
+      <div class="stat-icon" style="background: rgba(79, 70, 229, 0.2)">👥</div>
+      <div class="stat-content">
+        <h3>{{ totalEmployees }}</h3>
+        <p>Total Employees</p>
+        <div class="trend positive">↑ 12%</div>
+      </div>
+    </div>
+    <div class="stat-card glass" (click)="changeView('employees')">
+      <div class="stat-icon" style="background: rgba(6, 182, 212, 0.2)">🏢</div>
+      <div class="stat-content">
+        <h3>{{ totalDepartments }}</h3>
+        <p>Departments</p>
+        <div class="trend">→ 0%</div>
+      </div>
+    </div>
+    <div class="stat-card glass" (click)="changeView('leaves')">
+      <div class="stat-icon" style="background: rgba(245, 158, 11, 0.2)">📋</div>
+      <div class="stat-content">
+        <h3>{{ pendingLeaves }}</h3>
+        <p>Pending Leaves</p>
+        <div class="trend positive">↑ 5%</div>
+      </div>
+    </div>
+    <div class="stat-card glass" (click)="changeView('late')">
+      <div class="stat-icon" style="background: rgba(239, 68, 68, 0.2)">⏰</div>
+      <div class="stat-content">
+        <h3>{{ pendingLate }}</h3>
+        <p>Pending Late</p>
+        <div class="trend negative">↓ 2%</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="approvals-section glass">
+    <div class="section-header">
+      <div class="header-left">
+        <h2>⏳ Pending Approvals</h2>
+        <span class="badge pulse">{{ approvalStats.total }}</span>
+      </div>
+      <div class="header-right">
+        <div class="search-box">
+          <span class="search-icon">🔍</span>
+          <input type="text" placeholder="Search by name or email..." [(ngModel)]="searchTerm">
+        </div>
+        <select class="filter-select" [(ngModel)]="filterRole">
+          <option value="all">All Roles</option>
+          <option value="Admin">Admin</option>
+          <option value="Manager">Manager</option>
+          <option value="Supervisor">Supervisor</option>
+        </select>
+      </div>
+    </div>
+
+    <div *ngIf="loadingApprovals" class="loading-state">
+      <div class="spinner"></div>
+      <p>Loading pending approvals...</p>
+    </div>
+
+    <div class="approvals-grid" *ngIf="!loadingApprovals">
+      <div class="approval-card" *ngFor="let approval of filteredApprovals" [style.border-color]="getRoleColor(approval.requestedRole)">
+        <div class="card-glow"></div>
+        <div class="approval-header">
+          <span class="status-indicator pulse"></span>
+          <span class="time">{{ getTimeAgo(approval.date || approval.Date || approval.createdAt || approval.CreatedAt) }}</span>
+        </div>
+        <div class="approval-body">
+          <div class="user-info">
+            <h3>{{ approval.name || approval.Name }}</h3>
+            <p class="email">{{ approval.email || approval.Email }}</p>
+          </div>
+          <div class="request-details">
+            <div class="detail-item">
+              <span class="label">Requesting:</span>
+              <span class="value role-tag" [style.background]="getRoleColor(approval.requestedRole) + '20'"
+                                         [style.color]="getRoleColor(approval.requestedRole)">
+                {{ approval.requestedRole }}
+              </span>
+            </div>
+            <div class="detail-item">
+              <span class="label">Department:</span>
+              <span class="value">{{ approval.department || approval.Department || 'Unassigned' }}</span>
+            </div>
+            <div class="detail-item">
+              <span class="label">Date:</span>
+              <span class="value">{{ (approval.date || approval.Date || approval.createdAt || approval.CreatedAt) | date:'mediumDate' }}</span>
+            </div>
+          </div>
+        </div>
+        <div class="approval-actions">
+          <button class="btn-approve" (click)="approveUser(approval.employeeID || approval.EmployeeID)" 
+                  [disabled]="processingUserId === (approval.employeeID || approval.EmployeeID)">
+            <span class="icon" *ngIf="processingUserId !== (approval.employeeID || approval.EmployeeID)">✓</span>
+            <span class="spinner-small" *ngIf="processingUserId === (approval.employeeID || approval.EmployeeID)"></span>
+            <span *ngIf="processingUserId !== (approval.employeeID || approval.EmployeeID)">Approve</span>
+          </button>
+          <button class="btn-reject" (click)="rejectUser(approval.employeeID || approval.EmployeeID)"
+                  [disabled]="processingUserId === (approval.employeeID || approval.EmployeeID)">
+            <span class="icon" *ngIf="processingUserId !== (approval.employeeID || approval.EmployeeID)">✗</span>
+            <span class="spinner-small" *ngIf="processingUserId === (approval.employeeID || approval.EmployeeID)"></span>
+            <span *ngIf="processingUserId !== (approval.employeeID || approval.EmployeeID)">Reject</span>
+          </button>
+          <button class="btn-view" (click)="viewEmployeeDetails(approval.employeeID || approval.EmployeeID)">
+            <span class="icon">👁️</span>
+          </button>
+        </div>
+      </div>
+
+      <div *ngIf="filteredApprovals.length === 0" class="empty-state">
+        <div class="empty-icon">✅</div>
+        <h3>All Caught Up!</h3>
+        <p>No pending approvals at the moment</p>
+      </div>
+    </div>
+
+    <div class="approval-stats">
+      <div class="stat-item">
+        <span class="stat-label">Total Pending</span>
+        <span class="stat-value">{{ approvalStats.total }}</span>
+      </div>
+      <div class="stat-item">
+        <span class="stat-label" style="color: #00ffff">Managers</span>
+        <span class="stat-value">{{ approvalStats.managers }}</span>
+      </div>
+      <div class="stat-item">
+        <span class="stat-label" style="color: #ffaa00">Supervisors</span>
+        <span class="stat-value">{{ approvalStats.supervisors }}</span>
+      </div>
+      <div class="stat-item">
+        <span class="stat-label" style="color: #ff00ff">Admins</span>
+        <span class="stat-value">{{ approvalStats.admins }}</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="tabs glass">
+    <button class="tab-btn" [class.active]="selectedView === 'employees'" (click)="changeView('employees')">
+      <span class="icon">👥</span> Employees
+    </button>
+    <button class="tab-btn" [class.active]="selectedView === 'leaves'" (click)="changeView('leaves')">
+      <span class="icon">📋</span> Leave Requests
+    </button>
+    <button class="tab-btn" [class.active]="selectedView === 'late'" (click)="changeView('late')">
+      <span class="icon">⏰</span> Late Arrivals
+    </button>
+    <button class="tab-btn" [class.active]="selectedView === 'reports'" (click)="changeView('reports')">
+      <span class="icon">📊</span> Reports
+    </button>
+  </div>
+
+  <div class="content-card glass" *ngIf="selectedView === 'employees'">
+    <div class="card-header">
+      <div class="header-left">
+        <h2>👥 Employee Directory</h2>
+        <span class="badge">{{ filteredEmployees.length }}</span>
+      </div>
+      <div class="filter-group">
+        <select class="department-filter" [(ngModel)]="selectedDepartment" (change)="applyEmployeeFilters()">
+          <option value="all">All Departments</option>
+          <option *ngFor="let dept of departments" [value]="dept">{{ dept }}</option>
+        </select>
+        <div class="search-box small">
+          <span class="search-icon">🔍</span>
+          <input type="text" placeholder="Search by name or email..." [(ngModel)]="employeeSearch" (input)="applyEmployeeFilters()">
+        </div>
+      </div>
+    </div>
+    <div *ngIf="loadingEmployees" class="loading-state">
+      <div class="spinner"></div>
+    </div>
+    <div class="table-container" *ngIf="!loadingEmployees">
+      <table class="modern-table">
+        <thead>
+          <tr>
+            <th>Name</th>
+            <th>Email</th>
+            <th>Department</th>
+            <th>Role</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let emp of filteredEmployees">
+            <td><strong>{{ emp.name }}</strong></td>
+            <td>{{ emp.email }}</td>
+            <td>{{ emp.department }}</td>
+            <td>
+              <span class="role-tag" [style.background]="getRoleColor(emp.role) + '20'"
+                                   [style.color]="getRoleColor(emp.role)">
+                {{ emp.role }}
+              </span>
+            </td>
+            <td>
+              <button class="btn-view-small" (click)="viewEmployeeDetails(emp.employeeID)">
+                View Details
+              </button>
+            </td>
+          </tr>
+          <tr *ngIf="filteredEmployees.length === 0">
+            <td colspan="5" class="no-data">No employees found</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="content-card glass" *ngIf="selectedView === 'leaves'">
+    <div class="card-header">
+      <div class="header-left">
+        <h2>📋 Leave Requests</h2>
+        <span class="badge">{{ allLeaveRequests.length }}</span>
+      </div>
+      <div class="search-box small" *ngIf="allLeaveRequests.length > 5">
+        <span class="search-icon">🔍</span>
+        <input type="text" placeholder="Search leaves..." [(ngModel)]="leaveSearch">
+      </div>
+    </div>
+    <div *ngIf="loadingLeaves" class="loading-state">
+      <div class="spinner"></div>
+      <p>Loading leave requests...</p>
+    </div>
+    <div class="table-container" *ngIf="!loadingLeaves">
+      <table class="modern-table" *ngIf="allLeaveRequests.length > 0">
+        <thead>
+          <tr>
+            <th>Employee</th>
+            <th>Type</th>
+            <th>Dates</th>
+            <th>Status</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let leave of allLeaveRequests">
+            <td><strong>{{ leave.employeeName }}</strong></td>
+            <td>{{ leave.leaveType?.name || leave.leaveTypeName || 'Unknown' }}</td>
+            <td>{{ leave.startDate | date:'MMM d' }} - {{ leave.endDate | date:'MMM d' }}</td>
+            <td>
+              <span class="status-badge" [class.status-pending]="leave.status === 'Pending'"
+                                         [class.status-approved]="leave.status === 'Approved'"
+                                         [class.status-rejected]="leave.status === 'Rejected'">
+                {{ leave.status }}
+              </span>
+            </td>
+            <td class="actions">
+              <button *ngIf="leave.status === 'Pending'" 
+                      class="btn-approve small" 
+                      (click)="approveRequest(leave.leaveID)"
+                      [disabled]="processingRequestId === leave.leaveID">
+                <span *ngIf="processingRequestId !== leave.leaveID">✓</span>
+                <span class="spinner-small" *ngIf="processingRequestId === leave.leaveID"></span>
+              </button>
+              <button *ngIf="leave.status === 'Pending'" 
+                      class="btn-reject small" 
+                      (click)="rejectRequest(leave.leaveID)"
+                      [disabled]="processingRequestId === leave.leaveID">
+                <span *ngIf="processingRequestId !== leave.leaveID">✗</span>
+                <span class="spinner-small" *ngIf="processingRequestId === leave.leaveID"></span>
+              </button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+      <div *ngIf="allLeaveRequests.length === 0" class="empty-state">
+        <div class="empty-icon">📭</div>
+        <h3>No Leave Requests</h3>
+        <p class="empty-description">There are no leave requests in the system yet.</p>
+        <p class="empty-hint">When employees submit leave requests, they will appear here.</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="content-card glass" *ngIf="selectedView === 'late'">
+    <div class="card-header">
+      <div class="header-left">
+        <h2>⏰ Late Arrivals</h2>
+        <span class="badge">{{ allLateArrivals.length }}</span>
+      </div>
+      <div class="search-box small" *ngIf="allLateArrivals.length > 5">
+        <span class="search-icon">🔍</span>
+        <input type="text" placeholder="Search late arrivals..." [(ngModel)]="lateSearch">
+      </div>
+    </div>
+    <div *ngIf="loadingLate" class="loading-state">
+      <div class="spinner"></div>
+      <p>Loading late arrivals...</p>
+    </div>
+    <div class="table-container" *ngIf="!loadingLate">
+      <table class="modern-table" *ngIf="allLateArrivals.length > 0">
+        <thead>
+          <tr>
+            <th>Employee</th>
+            <th>Date</th>
+            <th>Expected</th>
+            <th>Reason</th>
+            <th>Status</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let late of allLateArrivals">
+            <td><strong>{{ late.employeeName }}</strong></td>
+            <td>{{ late.date | date:'MMM d, h:mm a' }}</td>
+            <td>{{ late.expectedArrival }}</td>
+            <td>{{ late.reason }}</td>
+            <td>
+              <span class="status-badge" [class.status-pending]="late.status === 'Pending'"
+                                         [class.status-reviewed]="late.status === 'Reviewed'">
+                {{ late.status }}
+              </span>
+            </td>
+            <td>
+              <button *ngIf="late.status === 'Pending'" 
+                      class="btn-review" 
+                      (click)="reviewLateArrival(late.lateID)"
+                      [disabled]="processingLateId === late.lateID">
+                <span *ngIf="processingLateId !== late.lateID">✓ Mark Reviewed</span>
+                <span class="spinner-small" *ngIf="processingLateId === late.lateID"></span>
+              </button>
+              <a *ngIf="late.photoPath" [href]="late.photoPath" target="_blank" class="photo-link">
+                📸 Photo
+              </a>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+      <div *ngIf="allLateArrivals.length === 0" class="empty-state">
+        <div class="empty-icon">⏰</div>
+        <h3>No Late Arrivals</h3>
+        <p class="empty-description">There are no late arrivals recorded yet.</p>
+        <p class="empty-hint">When employees report being late, they will appear here.</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="content-card glass" *ngIf="selectedView === 'reports'">
+    <div class="card-header">
+      <h2>📊 Reports</h2>
+    </div>
+    <div class="reports-grid">
+      <div class="report-card">
+        <h3>Employee Summary</h3>
+        <p>Total Employees: {{ totalEmployees }}</p>
+        <p>Departments: {{ totalDepartments }}</p>
+        <button class="btn-primary small">Download Report</button>
+      </div>
+      <div class="report-card">
+        <h3>Leave Summary</h3>
+        <p>Pending: {{ pendingLeaves }}</p>
+        <p>Approved: {{ allLeaveRequests.filter(l => l.status === 'Approved').length }}</p>
+        <p>Rejected: {{ allLeaveRequests.filter(l => l.status === 'Rejected').length }}</p>
+        <button class="btn-primary small">Download Report</button>
+      </div>
+      <div class="report-card">
+        <h3>Late Arrivals</h3>
+        <p>Pending: {{ pendingLate }}</p>
+        <p>Reviewed: {{ allLateArrivals.filter(l => l.status === 'Reviewed').length }}</p>
+        <button class="btn-primary small">Download Report</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Employee Details Modal -->
+<div class="modal-overlay" *ngIf="showEmployeeModal" (click)="closeEmployeeModal()">
+  <div class="modal-container glass" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <h2>Employee Details</h2>
+      <button class="modal-close" (click)="closeEmployeeModal()">✕</button>
+    </div>
+    <div class="modal-body" *ngIf="selectedEmployee">
+      <div class="employee-avatar" [style.background]="getRoleColor(selectedEmployee.role)">
+        {{ selectedEmployee.name?.charAt(0) }}
+      </div>
+      <div class="employee-info">
+        <p><strong>Name:</strong> {{ selectedEmployee.name }}</p>
+        <p><strong>Email:</strong> {{ selectedEmployee.email }}</p>
+        <p><strong>Department:</strong> {{ selectedEmployee.department || 'Unassigned' }}</p>
+        <p><strong>Role:</strong> <span [style.color]="getRoleColor(selectedEmployee.role)">{{ selectedEmployee.role }}</span></p>
+        <p><strong>Gender:</strong> {{ selectedEmployee.gender || 'Not specified' }}</p>
+        <p><strong>Hire Date:</strong> {{ selectedEmployee.hireDate | date:'MMM d, y' }}</p>
+        <p><strong>Status:</strong> <span class="status-badge" [class.status-active]="selectedEmployee.isActive">Active</span></p>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-secondary" (click)="closeEmployeeModal()">Close</button>
+    </div>
+  </div>
+</div>
